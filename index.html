@@ -4,17 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>シンプル Todo アプリ</title>
+  <!-- 紙吹雪用ライブラリ canvas-confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <style>
     :root {
-      --primary-color: #4f46e5;
-      --primary-hover: #4338ca;
-      --bg-color: #f3f4f6;
+      --primary-color: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
       --card-bg: #ffffff;
       --text-main: #1f2937;
       --text-muted: #6b7280;
       --border-color: #e5e7eb;
       --danger: #ef4444;
-      --danger-hover: #dc2626;
       --success: #10b981;
     }
 
@@ -26,7 +27,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg-color);
+      background: var(--bg-gradient);
       color: var(--text-main);
       display: flex;
       justify-content: center;
@@ -37,89 +38,118 @@
     .app-container {
       background: var(--card-bg);
       width: 100%;
-      max-width: 500px;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-      padding: 24px;
+      max-width: 520px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+      padding: 28px 24px;
       height: fit-content;
+      position: relative;
     }
 
     h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
+      font-size: 1.75rem;
+      font-weight: 800;
       text-align: center;
       margin-bottom: 20px;
-      color: var(--primary-color);
+      background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 達成メッセージバナー */
+    .praise-banner {
+      display: none;
+      background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+      border: 1px solid #f0abfc;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #a21caf;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
     }
 
     .input-group {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 20px;
     }
 
     .input-group input {
       flex: 1;
-      padding: 12px 16px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
+      padding: 14px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
       font-size: 1rem;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: all 0.2s;
     }
 
     .input-group input:focus {
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
     }
 
     .btn {
-      padding: 12px 18px;
+      padding: 14px 22px;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.05s;
+      transition: all 0.2s;
     }
 
     .btn:active {
-      transform: scale(0.98);
+      transform: scale(0.96);
     }
 
     .btn-primary {
-      background-color: var(--primary-color);
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
 
     .btn-primary:hover {
-      background-color: var(--primary-hover);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+      transform: translateY(-1px);
     }
 
     .filters {
       display: flex;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 6px;
+      margin-bottom: 18px;
       border-bottom: 1px solid var(--border-color);
-      padding-bottom: 12px;
+      padding-bottom: 14px;
     }
 
     .filter-btn {
       background: none;
       border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
       color: var(--text-muted);
       cursor: pointer;
       font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background-color: #f3f4f6;
     }
 
     .filter-btn.active {
       background-color: #e0e7ff;
       color: var(--primary-color);
-      font-weight: 600;
     }
 
     .todo-list {
@@ -127,28 +157,33 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 400px;
+      max-height: 420px;
       overflow-y: auto;
+      padding: 2px;
     }
 
     .todo-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
-      background-color: #f9fafb;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      transition: all 0.2s;
+      padding: 14px 16px;
+      background-color: #ffffff;
+      border: 1.5px solid var(--border-color);
+      border-radius: 12px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
 
     .todo-item:hover {
       border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .todo-item.completed {
-      background-color: #f3f4f6;
-      opacity: 0.75;
+      background-color: #f8fafc;
+      border-color: #e2e8f0;
+      opacity: 0.7;
     }
 
     .todo-item.completed .todo-text {
@@ -156,50 +191,65 @@
       color: var(--text-muted);
     }
 
+    /* 完了時のバウンスアニメーション */
+    .todo-item.just-completed {
+      animation: completeBounce 0.45s ease-out;
+    }
+
+    @keyframes completeBounce {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.04); background-color: #fdf2f8; }
+      100% { transform: scale(1); }
+    }
+
     .todo-content {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       flex: 1;
       overflow: hidden;
     }
 
     .todo-checkbox {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       cursor: pointer;
       accent-color: var(--primary-color);
+      transition: transform 0.15s;
+    }
+
+    .todo-checkbox:hover {
+      transform: scale(1.15);
     }
 
     .todo-text {
-      font-size: 0.95rem;
+      font-size: 1rem;
       word-break: break-word;
       user-select: none;
       cursor: pointer;
+      line-height: 1.4;
     }
 
     .delete-btn {
       background: none;
       border: none;
-      color: var(--danger);
+      color: #9ca3af;
       cursor: pointer;
-      padding: 6px;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 6px;
       font-size: 1rem;
-      transition: background-color 0.2s;
+      transition: all 0.2s;
     }
 
     .delete-btn:hover {
+      color: var(--danger);
       background-color: #fee2e2;
     }
 
     .empty-state {
       text-align: center;
       color: var(--text-muted);
-      padding: 30px 0;
+      padding: 36px 0;
       font-size: 0.95rem;
     }
 
@@ -207,10 +257,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 16px;
-      padding-top: 12px;
+      margin-top: 18px;
+      padding-top: 14px;
       border-top: 1px solid var(--border-color);
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       color: var(--text-muted);
     }
 
@@ -218,9 +268,10 @@
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       cursor: pointer;
       text-decoration: underline;
+      transition: color 0.2s;
     }
 
     .clear-completed-btn:hover {
@@ -230,8 +281,11 @@
 </head>
 <body>
   <div class="app-container">
-    <h1>Todo リスト</h1>
+    <h1>✨ Todo リスト</h1>
     
+    <!-- 完了時の褒め言葉バナー -->
+    <div id="praise-banner" class="praise-banner"></div>
+
     <form id="todo-form" class="input-group">
       <input type="text" id="todo-input" placeholder="新しいタスクを入力..." autocomplete="off" required>
       <button type="submit" class="btn btn-primary">追加</button>
@@ -245,10 +299,10 @@
 
     <ul id="todo-list" class="todo-list"></ul>
     
-    <div id="empty-state" class="empty-state" style="display: none;">タスクはありません</div>
+    <div id="empty-state" class="empty-state" style="display: none;">タスクはありません ☕</div>
 
     <div class="stats">
-      <span id="items-left">0 件のタスク</span>
+      <span id="items-left">残り: 0 件</span>
       <button type="button" id="clear-completed" class="clear-completed-btn" style="display: none;">完了済みを削除</button>
     </div>
   </div>
@@ -265,12 +319,116 @@
     const itemsLeft = document.getElementById('items-left');
     const clearCompletedBtn = document.getElementById('clear-completed');
     const filterButtons = document.querySelectorAll('.filter-btn');
+    const praiseBanner = document.getElementById('praise-banner');
+
+    // 褒め言葉のバリエーション
+    const PRAISES = [
+      "🎉 ナイス！1つ達成しました！素晴らしい！",
+      "⭐ その調子！どんどん進んでいます！",
+      "💪 お疲れ様です！着実に前進しています！",
+      "🔥 すごい集中力！この勢いでいきましょう！",
+      "✨ 素晴らしい達成感！自分を褒めてあげてください！",
+      "🚀 Excellent！目標クリア！"
+    ];
+
+    let praiseTimer = null;
+
+    // Web Audio API による心地よい成功音
+    function playSuccessSound(isAllComplete = false) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+
+        const playTone = (freq, startTime, duration) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+          
+          gain.gain.setValueAtTime(0.12, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + duration);
+        };
+
+        const now = ctx.currentTime;
+        if (isAllComplete) {
+          // 全達成時のファンファーレ音
+          playTone(523.25, now, 0.15);         // C5
+          playTone(659.25, now + 0.12, 0.15);  // E5
+          playTone(783.99, now + 0.24, 0.18);  // G5
+          playTone(1046.50, now + 0.38, 0.4);  // C6
+        } else {
+          // 通常の完了チャイム (ピロリン♪)
+          playTone(587.33, now, 0.12);         // D5
+          playTone(880.00, now + 0.1, 0.25);   // A5
+        }
+      } catch (e) {
+        // 音声ブロック環境では無視
+      }
+    }
+
+    // 紙吹雪エフェクト
+    function launchConfetti(isAllComplete = false) {
+      if (typeof confetti !== 'function') return;
+
+      if (isAllComplete) {
+        // 全部完了した時の豪華な打ち上げ
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 80,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 80,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+        }, 200);
+      } else {
+        // 1つのタスク完了時のかわいい紙吹雪
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          origin: { y: 0.75 },
+          scalar: 0.9
+        });
+      }
+    }
+
+    // 褒め言葉の表示
+    function showPraise(isAllComplete = false) {
+      const text = isAllComplete 
+        ? "🏆 全てのタスクを達成しました！完全制覇です！！✨" 
+        : PRAISES[Math.floor(Math.random() * PRAISES.length)];
+
+      praiseBanner.textContent = text;
+      praiseBanner.style.display = 'block';
+
+      if (praiseTimer) clearTimeout(praiseTimer);
+      praiseTimer = setTimeout(() => {
+        praiseBanner.style.display = 'none';
+      }, 4000);
+    }
 
     function saveTodos() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
     }
 
-    function renderTodos() {
+    function renderTodos(animatingId = null) {
       todoList.innerHTML = '';
 
       const filteredTodos = todos.filter(todo => {
@@ -279,15 +437,11 @@
         return true;
       });
 
-      if (filteredTodos.length === 0) {
-        emptyState.style.display = 'block';
-      } else {
-        emptyState.style.display = 'none';
-      }
+      emptyState.style.display = filteredTodos.length === 0 ? 'block' : 'none';
 
       filteredTodos.forEach(todo => {
         const li = document.createElement('li');
-        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.id === animatingId ? 'just-completed' : ''}`;
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'todo-content';
@@ -338,14 +492,32 @@
     }
 
     function toggleTodo(id) {
+      let isNewlyCompleted = false;
+
       todos = todos.map(todo => {
         if (todo.id === id) {
-          return { ...todo, completed: !todo.completed };
+          const nextState = !todo.completed;
+          if (nextState) isNewlyCompleted = true;
+          return { ...todo, completed: nextState };
         }
         return todo;
       });
+
       saveTodos();
-      renderTodos();
+
+      if (isNewlyCompleted) {
+        const remaining = todos.filter(t => !t.completed).length;
+        const isAllDone = remaining === 0 && todos.length > 0;
+
+        // 嬉しい仕掛けを発動！
+        launchConfetti(isAllDone);
+        playSuccessSound(isAllDone);
+        showPraise(isAllDone);
+
+        renderTodos(id);
+      } else {
+        renderTodos();
+      }
     }
 
     function deleteTodo(id) {
@@ -382,4 +554,3 @@
   </script>
 </body>
 </html>
-
